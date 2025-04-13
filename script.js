@@ -66,10 +66,53 @@ function init() {
         }
     }
     
+    // Check if a specific post is shared via URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedPostId = urlParams.get('postId');
+    if (sharedPostId) {
+        showSharedPost(sharedPostId);
+    }
+
     updateTabIndicator();
     setupEventListeners();
     setupScrollAnimations();
     renderPosts();
+}
+
+// Show a shared post based on the postId in the URL
+function showSharedPost(postId) {
+    const post = posts.find(p => p.id === postId);
+    if (!post) {
+        alert('Post not found!');
+        return;
+    }
+
+    currentPostId = postId;
+
+    postModalContent.innerHTML = `
+        <div class="post-header">
+            <h3>${post.username || 'Anonymous'}</h3>
+        </div>
+        ${post.content ? `<div class="post-content">${post.content}</div>` : ''}
+        ${post.media ? `
+            <div class="post-media">
+                ${post.media.type === 'image' ? 
+                    `<img src="${post.media.url}" alt="Post media">` : 
+                    `<video controls><source src="${post.media.url}"></video>`}
+            </div>
+        ` : ''}
+        <div class="post-footer">
+            <div class="post-time">${formatDate(post.timestamp)}</div>
+        </div>
+    `;
+
+    roastsCount.textContent = post.roasts.length;
+    complimentsCount.textContent = post.compliments.length;
+
+    renderResponses('roasts', post.roasts);
+    renderResponses('compliments', post.compliments);
+
+    showModal('post-modal');
 }
 
 function setupEventListeners() {
@@ -253,6 +296,7 @@ function handlePostSubmit(e) {
     renderPosts();
 }
 
+// Add a share button to each post
 function renderPosts() {
     if (!currentUser) return;
     
@@ -278,6 +322,7 @@ function renderPosts() {
                 <div class="post-actions">
                     <button class="btn-sm edit-post" data-post-id="${post.id}"><i class="fas fa-edit"></i></button>
                     <button class="btn-sm delete-post" data-post-id="${post.id}"><i class="fas fa-trash"></i></button>
+                    <button class="btn-sm share-post" data-post-id="${post.id}"><i class="fas fa-share"></i></button>
                 </div>
             </div>
             ${isTextOnly ? 
@@ -312,6 +357,11 @@ function renderPosts() {
             deletePost(post.id);
         });
         
+        postEl.querySelector('.share-post').addEventListener('click', (e) => {
+            e.stopPropagation();
+            sharePost(post.id);
+        });
+        
         postEl.querySelectorAll('.view-roasts, .view-compliments').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -328,6 +378,7 @@ function renderPosts() {
     
     setupScrollAnimations();
 }
+
 function showPostModal(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
@@ -624,6 +675,15 @@ function deletePost(postId) {
     posts = posts.filter(p => p.id !== postId);
     localStorage.setItem('roastme-posts', JSON.stringify(posts));
     renderPosts();
+}
+
+function sharePost(postId) {
+    const url = `${window.location.origin}${window.location.pathname}?postId=${postId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Post link copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy post link: ', err);
+    });
 }
 
 function showMediaModal(context) {
