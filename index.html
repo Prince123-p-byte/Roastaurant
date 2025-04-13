@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoastMe | Get Roasted or Complimented</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="modal-overlay"></div> <!-- Add this for the blurry background -->
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">RoastMe</div>
+                <div id="auth-section">
+                    <div class="auth-buttons" id="auth-buttons">
+                        <button id="login-btn" class="btn-primary">Login</button>
+                        <button id="signup-btn" class="btn-secondary">Sign Up</button>
+                    </div>
+                    <div class="user-actions hidden" id="user-actions">
+                        <span id="username-display" class="username-display"></span>
+                        <button id="account-btn" class="btn-dark btn-sm">Account</button>
+                        <button id="logout-btn" class="btn-light btn-sm">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="auth-forms" class="hidden">
+                <div class="auth-section" id="login-section">
+                    <h2>Login</h2>
+                    <form id="login-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="login-username">Username</label>
+                            <input type="text" id="login-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Login</button>
+                    </form>
+                    <p class="auth-switch">Don't have an account? <a href="#" id="switch-to-signup">Sign Up</a></p>
+                </div>
+
+                <div class="auth-section hidden" id="signup-section">
+                    <h2>Sign Up</h2>
+                    <form id="signup-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="signup-username">Username</label>
+                            <input type="text" id="signup-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password">Password</label>
+                            <input type="password" id="signup-password" required>
+                        </div>
+                        <button type="submit" class="btn-secondary">Sign Up</button>
+                    </form>
+                    <p class="auth-switch">Already have an account? <a href="#" id="switch-to-login">Login</a></p>
+                </div>
+            </div>
+
+            <div id="app-content" class="hidden">
+                <div class="post-form">
+                    <h3>Create a Post</h3>
+                    <form id="new-post-form">
+                        <textarea id="post-content" placeholder="What do you want to get roasted or complimented about?"></textarea>
+                        <div class="form-actions">
+                            <div class="media-options">
+                                <button type="button" id="add-photo" class="btn-sm"><i class="fas fa-image"></i> Photo</button>
+                                <button type="button" id="add-video" class="btn-sm"><i class="fas fa-video"></i> Video</button>
+                            </div>
+                            <button type="submit" class="btn-primary">Post</button>
+                        </div>
+                        <div id="media-preview" class="media-preview"></div>
+                    </form>
+                </div>
+
+                <div class="posts-container" id="posts-container">
+                    <!-- Example Post -->
+                    <div class="post">
+                        <div class="post-header">
+                            <h4>Post Title</h4>
+                        </div>
+                        <div class="post-content">
+                            <p>This is an example post content.</p>
+                        </div>
+                        <div class="post-actions">
+                            <button class="btn-sm share-btn" data-post-id="12345"><i class="fas fa-share"></i> Share</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="post-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <div id="post-modal-content"></div>
+                    <div class="response-tabs">
+                        <div class="tabs">
+                            <div class="tab active" data-tab="roasts">Roasts (<span id="roasts-count">0</span>)</div>
+                            <div class="tab" data-tab="compliments">Compliments (<span id="compliments-count">0</span>)</div>
+                            <div class="tab-indicator" id="tab-indicator"></div>
+                        </div>
+                        <div class="tab-content active" id="roasts-tab">
+                            <form id="roast-form" class="response-form">
+                                <input type="text" id="roast-content" placeholder="Write a roast..." required>
+                                <button type="submit" class="btn-primary btn-sm">Post Roast</button>
+                            </form>
+                            <div id="roasts-list" class="responses-list"></div>
+                        </div>
+                        <div class="tab-content" id="compliments-tab">
+                            <form id="compliment-form" class="response-form">
+                                <input type="text" id="compliment-content" placeholder="Write a compliment..." required>
+                                <button type="submit" class="btn-secondary btn-sm">Post Compliment</button>
+                            </form>
+                            <div id="compliments-list" class="responses-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="account-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2>Account Settings</h2>
+                    <form id="account-form">
+                        <div class="form-group">
+                            <label for="edit-username">Username</label>
+                            <input type="text" id="edit-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-password">New Password (leave blank to keep current)</label>
+                            <input type="password" id="edit-password">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Save Changes</button>
+                            <button type="button" id="delete-account" class="btn-dark">Delete Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="media-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2>Add Media</h2>
+                    <input type="file" id="media-upload" accept="image/*,video/*" style="display: none;">
+                    <button id="upload-btn" class="btn-primary"><i class="fas fa-upload"></i> Upload Media</button>
+                    <div id="media-upload-preview" class="media-preview"></div>
+                    <button id="confirm-media" class="btn-secondary">Confirm</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <p>&copy; 2023 RoastMe. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
