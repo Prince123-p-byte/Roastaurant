@@ -104,15 +104,56 @@ function showSharedPost(postId) {
         <div class="post-footer">
             <div class="post-time">${formatDate(post.timestamp)}</div>
         </div>
+        <div class="post-comments">
+            <h4>Comments</h4>
+            <div id="comments-list">
+                ${post.comments && post.comments.length > 0 ? post.comments.map(comment => `
+                    <div class="comment">
+                        <span class="comment-author">${comment.author || 'Anonymous'}</span>
+                        <p>${comment.content}</p>
+                        <span class="comment-time">${formatDate(comment.timestamp)}</span>
+                    </div>
+                `).join('') : '<p>No comments yet. Be the first to comment!</p>'}
+            </div>
+            <form id="comment-form">
+                <textarea id="comment-content" placeholder="Write a comment..." required></textarea>
+                <button type="submit" class="btn-primary">Post Comment</button>
+            </form>
+        </div>
     `;
 
-    roastsCount.textContent = post.roasts.length;
-    complimentsCount.textContent = post.compliments.length;
-
-    renderResponses('roasts', post.roasts);
-    renderResponses('compliments', post.compliments);
+    // Add event listener for the comment form
+    document.getElementById('comment-form').addEventListener('submit', handleCommentSubmit);
 
     showModal('post-modal');
+}
+
+// Handle comment submission
+function handleCommentSubmit(e) {
+    e.preventDefault();
+
+    const commentContent = document.getElementById('comment-content').value.trim();
+    if (!commentContent) {
+        alert('Please enter a comment');
+        return;
+    }
+
+    const post = posts.find(p => p.id === currentPostId);
+    if (!post) return;
+
+    if (!post.comments) {
+        post.comments = [];
+    }
+
+    post.comments.push({
+        id: Date.now().toString(),
+        content: commentContent,
+        author: currentUser ? currentUser.username : 'Anonymous',
+        timestamp: new Date().toISOString()
+    });
+
+    localStorage.setItem('roastme-posts', JSON.stringify(posts));
+    showSharedPost(currentPostId); // Refresh the modal to show the new comment
 }
 
 function setupEventListeners() {
