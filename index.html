@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoastMe | Get Roasted or Complimented</title>
+    <title>Roastraunt | Get Roasted or Complimented</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="modal-overlay"></div> <!-- Add this for the blurry background -->
-    <div class="container">
-        <header>
+    <div class="modal-overlay"></div>
+    <div class="app-container">
+        <header class="animate__animated animate__fadeInDown">
             <div class="header-content">
-                <div class="logo">RoastMe</div>
+                <div class="logo">Roastraunt</div>
                 <div id="auth-section">
                     <div class="auth-buttons" id="auth-buttons">
-                        <button id="login-btn" class="btn-primary">Login</button>
-                        <button id="signup-btn" class="btn-secondary">Sign Up</button>
+                        <button id="signup-btn" class="btn-secondary animate__animated animate__pulse animate__infinite">Sign Up</button>
                     </div>
                     <div class="user-actions hidden" id="user-actions">
                         <span id="username-display" class="username-display"></span>
@@ -28,41 +28,46 @@
         </header>
 
         <main>
-            <div id="auth-forms" class="hidden">
-                <div class="auth-section" id="login-section">
-                    <h2>Login</h2>
-                    <form id="login-form" class="auth-form">
-                        <div class="form-group">
-                            <label for="login-username">Username</label>
-                            <input type="text" id="login-username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="login-password">Password</label>
-                            <input type="password" id="login-password" required>
-                        </div>
-                        <button type="submit" class="btn-primary">Login</button>
-                    </form>
-                    <p class="auth-switch">Don't have an account? <a href="#" id="switch-to-signup">Sign Up</a></p>
-                </div>
-
-                <div class="auth-section hidden" id="signup-section">
-                    <h2>Sign Up</h2>
-                    <form id="signup-form" class="auth-form">
-                        <div class="form-group">
-                            <label for="signup-username">Username</label>
-                            <input type="text" id="signup-username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="signup-password">Password</label>
-                            <input type="password" id="signup-password" required>
-                        </div>
-                        <button type="submit" class="btn-secondary">Sign Up</button>
-                    </form>
-                    <p class="auth-switch">Already have an account? <a href="#" id="switch-to-login">Login</a></p>
+            <div id="landing-page" class="animate__animated animate__fadeIn">
+                <div class="landing-content">
+                    <h1 class="animate__animated animate__fadeInUp">Welcome to Roastraunt</h1>
+                    <p class="animate__animated animate__fadeInUp animate__delay-1s">Get roasted or complimented by the community. Join the fun!</p>
+                    
+                    <div class="auth-section animate__animated animate__fadeInUp animate__delay-2s" id="login-section">
+                        <h2>Login</h2>
+                        <form id="login-form" class="auth-form">
+                            <div class="form-group">
+                                <label for="login-username">Username</label>
+                                <input type="text" id="login-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password">Password</label>
+                                <input type="password" id="login-password" required>
+                            </div>
+                            <button type="submit" class="btn-primary">Login</button>
+                        </form>
+                        <p class="auth-switch">Don't have an account? <a href="#" id="switch-to-signup">Sign Up</a></p>
+                    </div>
                 </div>
             </div>
 
-            <div id="app-content" class="hidden">
+            <div class="auth-section hidden animate__animated animate__fadeIn" id="signup-section">
+                <h2>Sign Up</h2>
+                <form id="signup-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" required>
+                    </div>
+                    <button type="submit" class="btn-secondary">Sign Up</button>
+                </form>
+                <p class="auth-switch">Already have an account? <a href="#" id="switch-to-login">Login</a></p>
+            </div>
+
+            <div id="app-content" class="hidden animate__animated animate__fadeIn">
                 <div class="post-form">
                     <h3>Create a Post</h3>
                     <form id="new-post-form">
@@ -79,18 +84,7 @@
                 </div>
 
                 <div class="posts-container" id="posts-container">
-                    <!-- Example Post -->
-                    <div class="post">
-                        <div class="post-header">
-                            <h4>Post Title</h4>
-                        </div>
-                        <div class="post-content">
-                            <p>This is an example post content.</p>
-                        </div>
-                        <div class="post-actions">
-                            <button class="btn-sm share-btn" data-post-id="12345"><i class="fas fa-share"></i> Share</button>
-                        </div>
-                    </div>
+                    <!-- Posts will be loaded here -->
                 </div>
             </div>
 
@@ -155,7 +149,7 @@
             </div>
         </main>
 
-        <footer>
+        <footer class="animate__animated animate__fadeInUp">
             <div class="footer-content">
                 <p>&copy; 2023 RoastMe. All rights reserved.</p>
             </div>
