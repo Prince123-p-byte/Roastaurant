@@ -596,6 +596,63 @@ footer {
     transform: translateY(0);
 }
 
+/* Post Modal */
+#post-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 600px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    overflow: hidden;
+    display: none;
+}
+
+#post-modal.active {
+    display: block;
+}
+
+.post-comments {
+    margin-top: 1.5rem;
+}
+
+.comment {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.comment-author {
+    font-weight: bold;
+    color: var(--dark);
+}
+
+.comment-time {
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+
+#comment-form {
+    margin-top: 1rem;
+}
+
+#comment-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: none;
+}
+
+#comment-form button {
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .app-container {
