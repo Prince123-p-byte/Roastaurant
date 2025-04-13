@@ -1,18 +1,17 @@
 // DOM Elements
 const authButtons = document.getElementById('auth-buttons');
 const userActions = document.getElementById('user-actions');
-const loginBtn = document.getElementById('login-btn');
 const signupBtn = document.getElementById('signup-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const accountBtn = document.getElementById('account-btn');
 const usernameDisplay = document.getElementById('username-display');
-const authForms = document.getElementById('auth-forms');
 const loginSection = document.getElementById('login-section');
 const signupSection = document.getElementById('signup-section');
 const loginForm = document.getElementById('login-form');
 const signupForm = document.getElementById('signup-form');
 const switchToSignup = document.getElementById('switch-to-signup');
 const switchToLogin = document.getElementById('switch-to-login');
+const landingPage = document.getElementById('landing-page');
 const appContent = document.getElementById('app-content');
 const newPostForm = document.getElementById('new-post-form');
 const postContent = document.getElementById('post-content');
@@ -52,15 +51,13 @@ let currentUser = null;
 let posts = [];
 let currentPostId = null;
 let currentMedia = null;
-let mediaContext = null; // 'post' or 'comment'
+let mediaContext = null;
 
 // Initialize the app
 function init() {
-    // Load data from localStorage
     const users = JSON.parse(localStorage.getItem('roastme-users')) || [];
     posts = JSON.parse(localStorage.getItem('roastme-posts')) || [];
     
-    // Check if user is logged in
     const loggedInUserId = localStorage.getItem('roastme-current-user');
     if (loggedInUserId) {
         currentUser = users.find(user => user.id === loggedInUserId);
@@ -69,25 +66,17 @@ function init() {
         }
     }
     
-    // Set up tab indicator
     updateTabIndicator();
-    
-    // Set up event listeners
     setupEventListeners();
-    
-    // Render posts
+    setupScrollAnimations();
     renderPosts();
 }
 
-// Set up event listeners
 function setupEventListeners() {
-    // Auth buttons
-    loginBtn.addEventListener('click', showLogin);
     signupBtn.addEventListener('click', showSignup);
     logoutBtn.addEventListener('click', logout);
     accountBtn.addEventListener('click', showAccountModal);
     
-    // Auth forms
     switchToSignup.addEventListener('click', (e) => {
         e.preventDefault();
         showSignup();
@@ -101,16 +90,13 @@ function setupEventListeners() {
     loginForm.addEventListener('submit', handleLogin);
     signupForm.addEventListener('submit', handleSignup);
     
-    // Post form
     newPostForm.addEventListener('submit', handlePostSubmit);
     addPhoto.addEventListener('click', () => showMediaModal('post'));
     addVideo.addEventListener('click', () => showMediaModal('post'));
     
-    // Response forms
     roastForm.addEventListener('submit', handleRoastSubmit);
     complimentForm.addEventListener('submit', handleComplimentSubmit);
     
-    // Tabs
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const tabName = tab.dataset.tab;
@@ -118,61 +104,62 @@ function setupEventListeners() {
         });
     });
     
-    // Account form
     accountForm.addEventListener('submit', handleAccountUpdate);
     deleteAccountBtn.addEventListener('click', handleAccountDeletion);
     
-    // Media upload
     uploadBtn.addEventListener('click', () => mediaUpload.click());
     mediaUpload.addEventListener('change', handleMediaUpload);
     confirmMediaBtn.addEventListener('click', confirmMedia);
     
-    // Close modals
     closeModals.forEach(btn => {
         btn.addEventListener('click', hideAllModals);
     });
     
-    // Close modals when clicking outside
     modalOverlay.addEventListener('click', hideAllModals);
     window.addEventListener('click', (e) => {
-        if (e.target === postModal) {
-            postModal.classList.add('hidden');
-        }
-        if (e.target === accountModal) {
-            accountModal.classList.add('hidden');
-        }
-        if (e.target === mediaModal) {
-            mediaModal.classList.add('hidden');
+        if (e.target === postModal || e.target === accountModal || e.target === mediaModal) {
+            hideAllModals();
         }
     });
 }
 
-// Show login form
+function setupScrollAnimations() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.animate-on-scroll').forEach(el => {
+        observer.observe(el);
+    });
+}
+
 function showLogin() {
-    authForms.classList.remove('hidden');
+    landingPage.classList.remove('hidden');
     loginSection.classList.remove('hidden');
     signupSection.classList.add('hidden');
     appContent.classList.add('hidden');
 }
 
-// Show signup form
 function showSignup() {
-    authForms.classList.remove('hidden');
+    landingPage.classList.add('hidden');
     loginSection.classList.add('hidden');
     signupSection.classList.remove('hidden');
     appContent.classList.add('hidden');
 }
 
-// Show app content
 function showAppContent() {
-    authForms.classList.add('hidden');
+    landingPage.classList.add('hidden');
+    signupSection.classList.add('hidden');
     appContent.classList.remove('hidden');
     authButtons.classList.add('hidden');
     userActions.classList.remove('hidden');
     usernameDisplay.textContent = currentUser.username;
 }
 
-// Handle login
 function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('login-username').value;
@@ -191,7 +178,6 @@ function handleLogin(e) {
     }
 }
 
-// Handle signup
 function handleSignup(e) {
     e.preventDefault();
     const username = document.getElementById('signup-username').value;
@@ -224,17 +210,14 @@ function handleSignup(e) {
     renderPosts();
 }
 
-// Logout
 function logout() {
     currentUser = null;
     localStorage.removeItem('roastme-current-user');
     authButtons.classList.remove('hidden');
     userActions.classList.add('hidden');
-    authForms.classList.add('hidden');
-    appContent.classList.add('hidden');
+    showLogin();
 }
 
-// Handle post submission
 function handlePostSubmit(e) {
     e.preventDefault();
     
@@ -270,7 +253,6 @@ function handlePostSubmit(e) {
     renderPosts();
 }
 
-// Render posts
 function renderPosts() {
     if (!currentUser) return;
     
@@ -279,23 +261,28 @@ function renderPosts() {
     const userPosts = posts.filter(post => post.userId === currentUser.id);
     
     if (userPosts.length === 0) {
-        postsContainer.innerHTML = '<p class="no-posts">You have no posts yet. Create your first post to get roasted or complimented!</p>';
+        postsContainer.innerHTML = '<p class="no-posts animate-on-scroll">You have no posts yet. Create your first post to get roasted or complimented!</p>';
+        setupScrollAnimations();
         return;
     }
     
     userPosts.forEach(post => {
         const postEl = document.createElement('div');
-        postEl.className = 'post';
+        postEl.className = 'post animate-on-scroll';
+        
+        const isTextOnly = post.content && !post.media;
+        
         postEl.innerHTML = `
             <div class="post-header">
                 <h4>${post.username}</h4>
                 <div class="post-actions">
                     <button class="btn-sm edit-post" data-post-id="${post.id}"><i class="fas fa-edit"></i></button>
                     <button class="btn-sm delete-post" data-post-id="${post.id}"><i class="fas fa-trash"></i></button>
-                    <button class="btn-sm share-btn" data-post-id="${post.id}"><i class="fas fa-share"></i></button>
                 </div>
             </div>
-            <div class="post-content">${post.content}</div>
+            ${isTextOnly ? 
+                `<div class="text-post">${post.content}</div>` : 
+                `<div class="post-content">${post.content}</div>`}
             ${post.media ? `
                 <div class="post-media">
                     ${post.media.type === 'image' ? 
@@ -313,48 +300,34 @@ function renderPosts() {
         `;
         
         postsContainer.appendChild(postEl);
-    });
-    
-    // Add event listeners to post actions
-    document.querySelectorAll('.edit-post').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        
+        // Add event listeners
+        postEl.querySelector('.edit-post').addEventListener('click', (e) => {
             e.stopPropagation();
-            editPost(btn.dataset.postId);
+            editPost(post.id);
         });
-    });
-    
-    document.querySelectorAll('.delete-post').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        
+        postEl.querySelector('.delete-post').addEventListener('click', (e) => {
             e.stopPropagation();
-            deletePost(btn.dataset.postId);
+            deletePost(post.id);
         });
-    });
-    
-    document.querySelectorAll('.view-roasts, .view-compliments').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showPostModal(btn.dataset.postId);
+        
+        postEl.querySelectorAll('.view-roasts, .view-compliments').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showPostModal(btn.dataset.postId);
+            });
         });
-    });
-    
-    document.querySelectorAll('.post').forEach(post => {
-        post.addEventListener('click', (e) => {
+        
+        postEl.addEventListener('click', (e) => {
             if (!e.target.closest('.post-actions') && !e.target.closest('.post-responses')) {
-                showPostModal(post.querySelector('[data-post-id]').dataset.postId);
+                showPostModal(post.id);
             }
         });
     });
     
-    // Add event listeners to share buttons
-    document.querySelectorAll('.share-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const postId = button.dataset.postId;
-            handleShare(postId);
-        });
-    });
+    setupScrollAnimations();
 }
-
-// Show post modal
 function showPostModal(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
@@ -365,7 +338,7 @@ function showPostModal(postId) {
         <div class="post-header">
             <h3>${post.username}</h3>
         </div>
-        <div class="post-content">${post.content}</div>
+        ${post.content ? `<div class="post-content">${post.content}</div>` : ''}
         ${post.media ? `
             <div class="post-media">
                 ${post.media.type === 'image' ? 
@@ -387,7 +360,6 @@ function showPostModal(postId) {
     showModal('post-modal');
 }
 
-// Render responses (roasts or compliments)
 function renderResponses(type, responses) {
     const container = type === 'roasts' ? roastsList : complimentsList;
     container.innerHTML = '';
@@ -431,7 +403,6 @@ function renderResponses(type, responses) {
         container.appendChild(responseEl);
     });
     
-    // Add event listeners to reply buttons
     document.querySelectorAll('.reply-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -475,7 +446,6 @@ function renderResponses(type, responses) {
     });
 }
 
-// Switch between tabs
 function switchTab(tabName) {
     tabs.forEach(tab => {
         tab.classList.remove('active');
@@ -490,7 +460,6 @@ function switchTab(tabName) {
     updateTabIndicator();
 }
 
-// Update tab indicator position
 function updateTabIndicator() {
     const activeTab = document.querySelector('.tab.active');
     if (activeTab) {
@@ -499,19 +468,16 @@ function updateTabIndicator() {
     }
 }
 
-// Handle roast submission
 function handleRoastSubmit(e) {
     e.preventDefault();
     submitResponse('roasts', roastContent);
 }
 
-// Handle compliment submission
 function handleComplimentSubmit(e) {
     e.preventDefault();
     submitResponse('compliments', complimentContent);
 }
 
-// Submit response (roast or compliment)
 function submitResponse(type, inputElement) {
     if (!currentPostId) return;
     
@@ -539,7 +505,6 @@ function submitResponse(type, inputElement) {
     switchTab(type);
 }
 
-// Show account modal
 function showAccountModal() {
     if (!currentUser) return;
     
@@ -548,7 +513,6 @@ function showAccountModal() {
     showModal('account-modal');
 }
 
-// Handle account update
 function handleAccountUpdate(e) {
     e.preventDefault();
     
@@ -568,7 +532,6 @@ function handleAccountUpdate(e) {
         return;
     }
     
-    // Check if username is already taken by another user
     if (users.some((u, index) => u.username === newUsername && index !== userIndex)) {
         alert('Username already taken');
         return;
@@ -583,7 +546,6 @@ function handleAccountUpdate(e) {
     currentUser = users[userIndex];
     usernameDisplay.textContent = currentUser.username;
     
-    // Update posts with new username
     posts.forEach(post => {
         if (post.userId === currentUser.id) {
             post.username = currentUser.username;
@@ -596,7 +558,6 @@ function handleAccountUpdate(e) {
     renderPosts();
 }
 
-// Handle account deletion
 function handleAccountDeletion() {
     if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) {
         return;
@@ -604,8 +565,6 @@ function handleAccountDeletion() {
     
     const users = JSON.parse(localStorage.getItem('roastme-users')) || [];
     const updatedUsers = users.filter(u => u.id !== currentUser.id);
-    
-    // Remove user's posts
     const updatedPosts = posts.filter(post => post.userId !== currentUser.id);
     
     localStorage.setItem('roastme-users', JSON.stringify(updatedUsers));
@@ -617,14 +576,12 @@ function handleAccountDeletion() {
     
     authButtons.classList.remove('hidden');
     userActions.classList.add('hidden');
-    authForms.classList.add('hidden');
-    appContent.classList.add('hidden');
+    showLogin();
     hideAllModals();
     
     renderPosts();
 }
 
-// Edit post
 function editPost(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
@@ -638,7 +595,7 @@ function editPost(postId) {
             ${post.media.type === 'image' ? 
                 `<img src="${post.media.url}" alt="Post media">` : 
                 `<video controls><source src="${post.media.url}"></video>`}
-            <button class="btn-sm remove-media" data-post-id="${postId}">
+            <button class="btn-sm remove-media">
                 <i class="fas fa-times"></i> Remove
             </button>
         `;
@@ -659,7 +616,6 @@ function editPost(postId) {
     renderPosts();
 }
 
-// Delete post
 function deletePost(postId) {
     if (!confirm('Are you sure you want to delete this post?')) {
         return;
@@ -670,14 +626,12 @@ function deletePost(postId) {
     renderPosts();
 }
 
-// Show media modal
 function showMediaModal(context) {
     mediaContext = context;
     mediaUploadPreview.innerHTML = '';
     showModal('media-modal');
 }
 
-// Handle media upload
 function handleMediaUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -700,7 +654,6 @@ function handleMediaUpload(e) {
         
         mediaUploadPreview.innerHTML = mediaHtml;
         
-        // Store the media data temporarily
         if (mediaContext === 'post') {
             currentMedia = {
                 type: mediaType,
@@ -712,7 +665,6 @@ function handleMediaUpload(e) {
     reader.readAsDataURL(file);
 }
 
-// Confirm media selection
 function confirmMedia() {
     if (!currentMedia) {
         alert('Please upload media first');
@@ -739,60 +691,32 @@ function confirmMedia() {
     hideAllModals();
 }
 
-// Format date
 function formatDate(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleString();
 }
 
-// Function to show a modal
 function showModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('hidden');
-        modalOverlay.classList.add('active'); // Show the overlay
-        document.body.classList.add('modal-open'); // Prevent scrolling
+        modalOverlay.classList.add('active');
+        document.body.classList.add('modal-open');
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
     }
 }
 
-// Function to hide all modals
 function hideAllModals() {
-    document.querySelectorAll('.modal').forEach(modal => modal.classList.add('hidden'));
-    modalOverlay.classList.remove('active'); // Hide the overlay
-    document.body.classList.remove('modal-open'); // Allow scrolling
-}
-
-// Function to generate a shareable link
-function generateShareLink(postId) {
-    const postUrl = `${window.location.origin}/?postId=${postId}`;
-    return postUrl;
-}
-
-// Function to handle sharing
-function handleShare(postId) {
-    const shareLink = generateShareLink(postId);
-
-    // Show sharing options
-    const shareOptions = `
-        <div class="share-options">
-            <p>Share this post:</p>
-            <input type="text" value="${shareLink}" readonly id="share-link">
-            <button class="btn-sm copy-btn" onclick="copyToClipboard('${shareLink}')">Copy Link</button>
-            <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}" target="_blank" class="btn-sm twitter-btn">Share on Twitter</a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}" target="_blank" class="btn-sm facebook-btn">Share on Facebook</a>
-        </div>
-    `;
-
-    alert(shareOptions); // Replace this with a modal or custom UI for better design
-}
-
-// Function to copy the link to clipboard
-function copyToClipboard(link) {
-    navigator.clipboard.writeText(link).then(() => {
-        alert('Link copied to clipboard!');
-    }).catch(err => {
-        console.error('Failed to copy link: ', err);
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
     });
+    modalOverlay.classList.remove('active');
+    document.body.classList.remove('modal-open');
 }
 
 // Initialize the app
