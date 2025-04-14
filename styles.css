@@ -714,3 +714,98 @@ footer {
         font-size: 1.2rem;
     }
 }
+/* Add these new styles to your existing CSS file */
+
+.shared-post-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.shared-post-view .post {
+    margin-bottom: 2rem;
+}
+
+.shared-post-actions {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+#shared-post-back {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+}
+
+.shared-comment-form {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.shared-comment-form h3 {
+    margin-bottom: 1rem;
+    color: var(--dark);
+}
+
+.shared-comment-form textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 100px;
+    margin-bottom: 1rem;
+}
+
+.shared-comment-form .form-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.shared-comment-form .form-actions button {
+    flex: 1;
+}
+
+.shared-comment-form .form-actions button:first-child {
+    background-color: var(--roast);
+}
+
+.shared-comment-form .form-actions button:last-child {
+    background-color: var(--compliment);
+}
+
+.shared-comments {
+    margin-top: 2rem;
+}
+
+.shared-comment {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.shared-comment.roast {
+    border-left: 4px solid var(--roast);
+}
+
+.shared-comment.compliment {
+    border-left: 4px solid var(--compliment);
+}
+
+.shared-comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--gray);
+}
+
+.shared-comment-content {
+    line-height: 1.5;
+}
