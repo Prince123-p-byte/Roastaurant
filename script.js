@@ -74,16 +74,24 @@ function init() {
     // Check if a specific post is shared via URL
     const urlParams = new URLSearchParams(window.location.search);
     const sharedPostId = urlParams.get('postId');
-    if (sharedPostId) {
-        // Verify post exists
+    const urlPost = urlParams.get('post'); // New: Check for encoded post data
+    if (urlPost) {
+        try {
+            const post = JSON.parse(atob(urlPost));
+            posts.push(post); // Temporarily add to local storage
+            showSharedPostView(post.id);
+            return;
+        } catch (e) {
+            console.error("Invalid post data");
+        }
+    } else if (sharedPostId) {
         const postExists = posts.some(p => p.id === sharedPostId);
         if (!postExists) {
-            // Redirect to home with error message
             window.location.href = window.location.origin + window.location.pathname + '?error=post_not_found';
             return;
         }
         showSharedPostView(sharedPostId);
-        return; // Stop further initialization for shared post view
+        return;
     }
 
     // Handle error messages
@@ -739,27 +747,15 @@ function deletePost(postId) {
 // Share post function
 function sharePost(postId) {
     const post = posts.find(p => p.id === postId);
-    if (!post) {
-        showNotification('Post not found', 'error');
-        return;
-    }
-
-    const url = `${window.location.origin}${window.location.pathname}?postId=${postId}`;
+    if (!post) return;
     
-    if (navigator.share) {
-        // Use Web Share API if available
-        navigator.share({
-            title: 'Check out my post on Roastraunt',
-            text: post.content ? post.content.substring(0, 100) : 'View this post on Roastraunt',
-            url: url
-        }).catch(err => {
-            console.log('Error sharing:', err);
-            copyToClipboard(url);
-        });
-    } else {
-        // Fallback to clipboard
-        copyToClipboard(url);
-    }
+    // Compress post data into URL
+    const postData = btoa(JSON.stringify(post));
+    const url = `${window.location.origin}${window.location.pathname}?post=${postData}`;
+    
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Sharable link copied!');
+    });
 }
 
 function copyToClipboard(text) {
