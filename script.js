@@ -46,6 +46,10 @@ const mediaUploadPreview = document.getElementById('media-upload-preview');
 const confirmMediaBtn = document.getElementById('confirm-media');
 const modalOverlay = document.querySelector('.modal-overlay');
 
+// Add these new variables at the top
+let realtimeCheckInterval;
+const REAL_TIME_UPDATE_INTERVAL = 5000; // Check for updates every 5 seconds
+
 // App State
 let currentUser = null;
 let posts = [];
@@ -63,6 +67,7 @@ function init() {
         currentUser = users.find(user => user.id === loggedInUserId);
         if (currentUser) {
             showAppContent();
+            startRealtimeUpdates(); // Start checking for updates
         }
     }
     
@@ -70,7 +75,20 @@ function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const sharedPostId = urlParams.get('postId');
     if (sharedPostId) {
-        showSharedPost(sharedPostId);
+        // Verify post exists
+        const postExists = posts.some(p => p.id === sharedPostId);
+        if (!postExists) {
+            // Redirect to home with error message
+            window.location.href = window.location.origin + window.location.pathname + '?error=post_not_found';
+            return;
+        }
+        showSharedPostView(sharedPostId);
+        return; // Stop further initialization for shared post view
+    }
+
+    // Handle error messages
+    if (urlParams.get('error') === 'post_not_found') {
+        showNotification('The post you were looking for was not found', 'error');
     }
 
     updateTabIndicator();
@@ -718,12 +736,38 @@ function deletePost(postId) {
     renderPosts();
 }
 
+// Share post function
 function sharePost(postId) {
+    const post = posts.find(p => p.id === postId);
+    if (!post) {
+        showNotification('Post not found', 'error');
+        return;
+    }
+
     const url = `${window.location.origin}${window.location.pathname}?postId=${postId}`;
-    navigator.clipboard.writeText(url).then(() => {
+    
+    if (navigator.share) {
+        // Use Web Share API if available
+        navigator.share({
+            title: 'Check out my post on Roastraunt',
+            text: post.content ? post.content.substring(0, 100) : 'View this post on Roastraunt',
+            url: url
+        }).catch(err => {
+            console.log('Error sharing:', err);
+            copyToClipboard(url);
+        });
+    } else {
+        // Fallback to clipboard
+        copyToClipboard(url);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
         alert('Post link copied to clipboard!');
     }).catch(err => {
         console.error('Failed to copy post link: ', err);
+        prompt('Copy this link:', text);
     });
 }
 
@@ -818,6 +862,205 @@ function hideAllModals() {
     });
     modalOverlay.classList.remove('active');
     document.body.classList.remove('modal-open');
+}
+
+function showSharedPostView(postId) {
+    // Hide all main sections
+    landingPage.classList.add('hidden');
+    loginSection.classList.add('hidden');
+    signupSection.classList.add('hidden');
+    appContent.classList.add('hidden');
+    
+    // Show shared post view
+    const sharedPostView = document.getElementById('shared-post-view');
+    sharedPostView.classList.remove('hidden');
+    
+    const post = posts.find(p => p.id === postId);
+    if (!post) {
+        // This should never happen since we check in init()
+        sharedPostView.innerHTML = '<p class="no-posts">Post not found</p>';
+        return;
+    }
+
+    renderSharedPostContent(post);
+    
+    // Set up event listeners for shared post view
+    document.getElementById('shared-post-back').addEventListener('click', () => {
+        window.location.href = window.location.origin + window.location.pathname;
+    });
+}
+
+function renderSharedPostContent(post) {
+    const sharedPostContainer = document.querySelector('.shared-post-container');
+    sharedPostContainer.innerHTML = `
+        <div class="post">
+            <div class="post-header">
+                <h3>${post.username || 'Anonymous'}</h3>
+            </div>
+            ${post.content ? `<div class="post-content">${post.content}</div>` : ''}
+            ${post.media ? `
+                <div class="post-media">
+                    ${post.media.type === 'image' ? 
+                        `<img src="${post.media.url}" alt="Post media">` : 
+                        `<video controls><source src="${post.media.url}"></video>`}
+                </div>
+            ` : ''}
+            <div class="post-footer">
+                <div class="post-time">${formatDate(post.timestamp)}</div>
+            </div>
+        </div>
+        
+        <div class="shared-comment-form">
+            <h3>Leave a response</h3>
+            <textarea id="shared-comment-content" placeholder="Write your roast or compliment..."></textarea>
+            <div class="shared-comment-buttons">
+                <button id="submit-roast" class="btn-primary" style="background-color: var(--roast)">Roast</button>
+                <button id="submit-compliment" class="btn-primary" style="background-color: var(--compliment)">Compliment</button>
+            </div>
+        </div>
+        
+        <div class="shared-comments">
+            <h3>Responses</h3>
+            <div id="shared-comments-list">
+                ${renderSharedComments(post)}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('submit-roast').addEventListener('click', (e) => {
+        e.preventDefault();
+        submitSharedResponse(post.id, 'roasts');
+    });
+    
+    document.getElementById('submit-compliment').addEventListener('click', (e) => {
+        e.preventDefault();
+        submitSharedResponse(post.id, 'compliments');
+    });
+}
+
+function renderSharedComments(post) {
+    if ((!post.roasts || post.roasts.length === 0) && (!post.compliments || post.compliments.length === 0)) {
+        return '<p>No responses yet. Be the first!</p>';
+    }
+    
+    let html = '';
+    
+    if (post.roasts && post.roasts.length > 0) {
+        html += '<h4>Roasts</h4>';
+        post.roasts.forEach(roast => {
+            html += `
+                <div class="shared-comment roast">
+                    <div class="shared-comment-header">
+                        <span>Anonymous</span>
+                        <span>${formatDate(roast.timestamp)}</span>
+                    </div>
+                    <div class="shared-comment-content">${roast.content}</div>
+                </div>
+            `;
+        });
+    }
+    
+    if (post.compliments && post.compliments.length > 0) {
+        html += '<h4>Compliments</h4>';
+        post.compliments.forEach(compliment => {
+            html += `
+                <div class="shared-comment compliment">
+                    <div class="shared-comment-header">
+                        <span>Anonymous</span>
+                        <span>${formatDate(compliment.timestamp)}</span>
+                    </div>
+                    <div class="shared-comment-content">${compliment.content}</div>
+                </div>
+            `;
+        });
+    }
+    
+    return html;
+}
+
+function submitSharedResponse(postId, type) {
+    const content = document.getElementById('shared-comment-content').value.trim();
+    if (!content) {
+        alert(`Please enter a ${type === 'roasts' ? 'roast' : 'compliment'}`);
+        return;
+    }
+    
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    
+    if (!post[type]) {
+        post[type] = [];
+    }
+    
+    post[type].push({
+        id: Date.now().toString(),
+        content,
+        timestamp: new Date().toISOString()
+    });
+    
+    localStorage.setItem('roastme-posts', JSON.stringify(posts));
+    document.getElementById('shared-comment-content').value = '';
+    showSharedPostView(postId); // Refresh the view
+}
+
+function startRealtimeUpdates() {
+    // Clear any existing interval
+    if (realtimeCheckInterval) clearInterval(realtimeCheckInterval);
+    
+    // Check for updates periodically
+    realtimeCheckInterval = setInterval(() => {
+        const oldPosts = [...posts];
+        const newPosts = JSON.parse(localStorage.getItem('roastme-posts')) || [];
+        
+        // Find posts with new comments
+        const updatedPosts = newPosts.filter(newPost => {
+            const oldPost = oldPosts.find(p => p.id === newPost.id);
+            if (!oldPost) return false;
+            
+            // Check if roasts or compliments have changed
+            const roastsChanged = JSON.stringify(newPost.roasts) !== JSON.stringify(oldPost.roasts);
+            const complimentsChanged = JSON.stringify(newPost.compliments) !== JSON.stringify(oldPost.compliments);
+            
+            return roastsChanged || complimentsChanged;
+        });
+        
+        if (updatedPosts.length > 0) {
+            posts = newPosts;
+            renderPosts();
+            
+            // Show notification for each updated post
+            updatedPosts.forEach(post => {
+                const totalNewResponses = 
+                    (post.roasts?.length || 0) + (post.compliments?.length || 0) - 
+                    (oldPosts.find(p => p.id === post.id)?.roasts?.length || 0) - 
+                    (oldPosts.find(p => p.id === post.id)?.compliments?.length || 0);
+                
+                if (totalNewResponses > 0) {
+                    showNotification(`New ${totalNewResponses} response(s) on your post!`, 'success');
+                }
+            });
+        }
+    }, REAL_TIME_UPDATE_INTERVAL);
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `realtime-notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+        notification.style.display = 'block';
+    }, 100);
+    
+    // Hide after 5 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 5000);
 }
 
 // Initialize the app
