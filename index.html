@@ -89,31 +89,10 @@
             </div>
 
             <div id="post-modal" class="modal hidden">
-                <div class="modal-content">
-                    <span class="close-modal">&times;</span>
-                    <div id="post-modal-content"></div>
-                    <div class="response-tabs">
-                        <div class="tabs">
-                            <div class="tab active" data-tab="roasts">Roasts (<span id="roasts-count">0</span>)</div>
-                            <div class="tab" data-tab="compliments">Compliments (<span id="compliments-count">0</span>)</div>
-                            <div class="tab-indicator" id="tab-indicator"></div>
-                        </div>
-                        <div class="tab-content active" id="roasts-tab">
-                            <form id="roast-form" class="response-form">
-                                <input type="text" id="roast-content" placeholder="Write a roast..." required>
-                                <button type="submit" class="btn-primary btn-sm">Post Roast</button>
-                            </form>
-                            <div id="roasts-list" class="responses-list"></div>
-                        </div>
-                        <div class="tab-content" id="compliments-tab">
-                            <form id="compliment-form" class="response-form">
-                                <input type="text" id="compliment-content" placeholder="Write a compliment..." required>
-                                <button type="submit" class="btn-secondary btn-sm">Post Compliment</button>
-                            </form>
-                            <div id="compliments-list" class="responses-list"></div>
-                        </div>
-                    </div>
+                <div class="modal-content" id="post-modal-content">
+                    <!-- Post content will be dynamically inserted here -->
                 </div>
+                <span class="close-modal">&times;</span>
             </div>
 
             <div id="account-modal" class="modal hidden">
@@ -145,6 +124,15 @@
                     <button id="upload-btn" class="btn-primary"><i class="fas fa-upload"></i> Upload Media</button>
                     <div id="media-upload-preview" class="media-preview"></div>
                     <button id="confirm-media" class="btn-secondary">Confirm</button>
+                </div>
+            </div>
+
+            <div id="shared-post-view" class="hidden">
+                <div class="shared-post-container">
+                    <!-- Shared post will be loaded here -->
+                </div>
+                <div class="shared-post-actions">
+                    <button id="shared-post-back" class="btn-primary">Back to Roastraunt</button>
                 </div>
             </div>
         </main>
