@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link rel="stylesheet" href="styles.css">
-    <script>
-        sessionStorage.redirect = location.pathname;
-        location.replace('/Roastaurant'); // Replace 'your-repo-name' with your repository name
-    </script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
 </head>
 <body>
     <div class="modal-overlay"></div>
@@ -46,7 +47,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="login-password">Password</label>
-                                <input type="password" id="login-password" required>
+                                <input type="password" id="login-password" required autocomplete="current-password">
                             </div>
                             <button type="submit" class="btn-primary">Login</button>
                         </form>
@@ -64,7 +65,7 @@
                     </div>
                     <div class="form-group">
                         <label for="signup-password">Password</label>
-                        <input type="password" id="signup-password" required>
+                        <input type="password" id="signup-password" required autocomplete="new-password">
                     </div>
                     <button type="submit" class="btn-secondary">Sign Up</button>
                 </form>
@@ -110,7 +111,7 @@
                         </div>
                         <div class="form-group">
                             <label for="edit-password">New Password (leave blank to keep current)</label>
-                            <input type="password" id="edit-password">
+                            <input type="password" id="edit-password" autocomplete="new-password">
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="btn-primary">Save Changes</button>
@@ -147,6 +148,23 @@
             </div>
         </footer>
     </div>
+
+    <!-- Firebase Initialization -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD6mnNkag6b3hyBv3YrhVxwFMmWFItfVaI",
+            authDomain: "roastaurant-16770.firebaseapp.com",
+            projectId: "roastaurant-16770",
+            storageBucket: "roastaurant-16770.firebasestorage.app",
+            messagingSenderId: "997332310761",
+            appId: "1:997332310761:web:44f134295a14449c67ee78",
+            measurementId: "G-FVPS8J1E5S"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore(); // Firestore instance
+    </script>
 
     <script src="script.js"></script>
 </body>
