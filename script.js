@@ -58,7 +58,7 @@ let currentMedia = null;
 let mediaContext = null;
 
 // Initialize the app
-function init() {
+async function init() {
     const users = JSON.parse(localStorage.getItem('roastme-users')) || [];
     posts = JSON.parse(localStorage.getItem('roastme-posts')) || [];
     
@@ -68,30 +68,22 @@ function init() {
         if (currentUser) {
             showAppContent();
             startRealtimeUpdates(); // Start checking for updates
+            initRealtime(); // Initialize real-time updates
         }
     }
     
     // Check if a specific post is shared via URL
     const urlParams = new URLSearchParams(window.location.search);
-    const sharedPostId = urlParams.get('postId');
-    const urlPost = urlParams.get('post'); // New: Check for encoded post data
-    if (urlPost) {
-        try {
-            const post = JSON.parse(atob(urlPost));
-            posts.push(post); // Temporarily add to local storage
+    const urlPostId = urlParams.get('postId'); // Updated to handle Firestore posts
+    if (urlPostId) {
+        const post = await getPostById(urlPostId); // Fetch post from Firestore
+        if (post) {
             showSharedPostView(post.id);
             return;
-        } catch (e) {
-            console.error("Invalid post data");
-        }
-    } else if (sharedPostId) {
-        const postExists = posts.some(p => p.id === sharedPostId);
-        if (!postExists) {
-            window.location.href = window.location.origin + window.location.pathname + '?error=post_not_found';
+        } else {
+            window.location.href = window.location.pathname + '?error=post_not_found';
             return;
         }
-        showSharedPostView(sharedPostId);
-        return;
     }
 
     // Handle error messages
@@ -328,20 +320,20 @@ function logout() {
     showLogin();
 }
 
-function handlePostSubmit(e) {
+async function handlePostSubmit(e) {
     e.preventDefault();
-    
+
     if (!currentUser) {
         showLogin();
         return;
     }
-    
+
     const content = postContent.value.trim();
     if (!content && !currentMedia) {
         alert('Please enter content or add media');
         return;
     }
-    
+
     const newPost = {
         id: Date.now().toString(),
         userId: currentUser.id,
@@ -352,37 +344,35 @@ function handlePostSubmit(e) {
         roasts: [],
         compliments: []
     };
-    
-    posts.unshift(newPost);
-    localStorage.setItem('roastme-posts', JSON.stringify(posts));
-    
+
+    await savePost(newPost); // Save post to Firestore
     postContent.value = '';
     mediaPreview.innerHTML = '';
     currentMedia = null;
-    
+
     renderPosts();
 }
 
 // Add a share button to each post
-function renderPosts() {
+async function renderPosts() {
     if (!currentUser) return;
-    
+
     postsContainer.innerHTML = '';
-    
-    const userPosts = posts.filter(post => post.userId === currentUser.id);
-    
+
+    const userPosts = await getPosts(currentUser.id); // Fetch posts from Firestore
+
     if (userPosts.length === 0) {
         postsContainer.innerHTML = '<p class="no-posts animate-on-scroll">You have no posts yet. Create your first post to get roasted or complimented!</p>';
         setupScrollAnimations();
         return;
     }
-    
+
     userPosts.forEach(post => {
         const postEl = document.createElement('div');
         postEl.className = 'post animate-on-scroll';
-        
+
         const isTextOnly = post.content && !post.media;
-        
+
         postEl.innerHTML = `
             <div class="post-header">
                 <h4>${post.username}</h4>
@@ -410,39 +400,39 @@ function renderPosts() {
                 </div>
             </div>
         `;
-        
+
         postsContainer.appendChild(postEl);
-        
+
         // Add event listeners
         postEl.querySelector('.edit-post').addEventListener('click', (e) => {
             e.stopPropagation();
             editPost(post.id);
         });
-        
+
         postEl.querySelector('.delete-post').addEventListener('click', (e) => {
             e.stopPropagation();
             deletePost(post.id);
         });
-        
+
         postEl.querySelector('.share-post').addEventListener('click', (e) => {
             e.stopPropagation();
             sharePost(post.id);
         });
-        
+
         postEl.querySelectorAll('.view-roasts, .view-compliments').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 showPostModal(btn.dataset.postId);
             });
         });
-        
+
         postEl.addEventListener('click', (e) => {
             if (!e.target.closest('.post-actions') && !e.target.closest('.post-responses')) {
                 showPostModal(post.id);
             }
         });
     });
-    
+
     setupScrollAnimations();
 }
 
@@ -746,15 +736,11 @@ function deletePost(postId) {
 
 // Share post function
 function sharePost(postId) {
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
-    
-    // Compress post data into URL
-    const postData = btoa(JSON.stringify(post));
-    const url = `${window.location.origin}${window.location.pathname}?post=${postData}`;
+    // Generate a sharable link using the postId
+    const url = `${window.location.origin}${window.location.pathname}?postId=${postId}`;
     
     navigator.clipboard.writeText(url).then(() => {
-        alert('Sharable link copied!');
+        alert('Link copied! Anyone can now view and respond to this post.');
     });
 }
 
@@ -862,39 +848,6 @@ function hideAllModals() {
 
 function showSharedPostView(postId) {
     // Hide all main sections
-    landingPage.classList.add('hidden');
-    loginSection.classList.add('hidden');
-    signupSection.classList.add('hidden');
-    appContent.classList.add('hidden');
-    
-    // Show shared post view
-    const sharedPostView = document.getElementById('shared-post-view');
-    sharedPostView.classList.remove('hidden');
-    
-    const post = posts.find(p => p.id === postId);
-    if (!post) {
-        // This should never happen since we check in init()
-        sharedPostView.innerHTML = '<p class="no-posts">Post not found</p>';
-        return;
-    }
-
-    renderSharedPostContent(post);
-    
-    // Set up event listeners for shared post view
-    document.getElementById('shared-post-back').addEventListener('click', () => {
-        window.location.href = window.location.origin + window.location.pathname;
-    });
-}
-
-function renderSharedPostContent(post) {
-    const sharedPostContainer = document.querySelector('.shared-post-container');
-    sharedPostContainer.innerHTML = `
-        <div class="post">
-            <div class="post-header">
-                <h3>${post.username || 'Anonymous'}</h3>
-            </div>
-            ${post.content ? `<div class="post-content">${post.content}</div>` : ''}
-            ${post.media ? `
                 <div class="post-media">
                     ${post.media.type === 'image' ? 
                         `<img src="${post.media.url}" alt="Post media">` : 
@@ -909,28 +862,31 @@ function renderSharedPostContent(post) {
         <div class="shared-comment-form">
             <h3>Leave a response</h3>
             <textarea id="shared-comment-content" placeholder="Write your roast or compliment..."></textarea>
-            <div class="shared-comment-buttons">
-                <button id="submit-roast" class="btn-primary" style="background-color: var(--roast)">Roast</button>
-                <button id="submit-compliment" class="btn-primary" style="background-color: var(--compliment)">Compliment</button>
+            <div class="form-actions">
+                <button id="submit-roast" class="btn-primary">Roast</button>
+                <button id="submit-compliment" class="btn-primary">Compliment</button>
             </div>
         </div>
         
         <div class="shared-comments">
             <h3>Responses</h3>
-            <div id="shared-comments-list">
-                ${renderSharedComments(post)}
-            </div>
+            ${renderSharedComments(post)}
         </div>
     `;
     
+    // Set up event listeners for shared post view
+    document.getElementById('shared-post-back').addEventListener('click', () => {
+        window.location.href = window.location.origin + window.location.pathname;
+    });
+    
     document.getElementById('submit-roast').addEventListener('click', (e) => {
         e.preventDefault();
-        submitSharedResponse(post.id, 'roasts');
+        submitSharedResponse(postId, 'roasts');
     });
     
     document.getElementById('submit-compliment').addEventListener('click', (e) => {
         e.preventDefault();
-        submitSharedResponse(post.id, 'compliments');
+        submitSharedResponse(postId, 'compliments');
     });
 }
 
@@ -999,64 +955,11 @@ function submitSharedResponse(postId, type) {
     showSharedPostView(postId); // Refresh the view
 }
 
-function startRealtimeUpdates() {
-    // Clear any existing interval
-    if (realtimeCheckInterval) clearInterval(realtimeCheckInterval);
-    
-    // Check for updates periodically
-    realtimeCheckInterval = setInterval(() => {
-        const oldPosts = [...posts];
-        const newPosts = JSON.parse(localStorage.getItem('roastme-posts')) || [];
-        
-        // Find posts with new comments
-        const updatedPosts = newPosts.filter(newPost => {
-            const oldPost = oldPosts.find(p => p.id === newPost.id);
-            if (!oldPost) return false;
-            
-            // Check if roasts or compliments have changed
-            const roastsChanged = JSON.stringify(newPost.roasts) !== JSON.stringify(oldPost.roasts);
-            const complimentsChanged = JSON.stringify(newPost.compliments) !== JSON.stringify(oldPost.compliments);
-            
-            return roastsChanged || complimentsChanged;
-        });
-        
-        if (updatedPosts.length > 0) {
-            posts = newPosts;
-            renderPosts();
-            
-            // Show notification for each updated post
-            updatedPosts.forEach(post => {
-                const totalNewResponses = 
-                    (post.roasts?.length || 0) + (post.compliments?.length || 0) - 
-                    (oldPosts.find(p => p.id === post.id)?.roasts?.length || 0) - 
-                    (oldPosts.find(p => p.id === post.id)?.compliments?.length || 0);
-                
-                if (totalNewResponses > 0) {
-                    showNotification(`New ${totalNewResponses} response(s) on your post!`, 'success');
-                }
-            });
-        }
-    }, REAL_TIME_UPDATE_INTERVAL);
-}
-
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `realtime-notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // Show notification
-    setTimeout(() => {
-        notification.style.display = 'block';
-    }, 100);
-    
-    // Hide after 5 seconds
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 5000);
+function initRealtime() {
+    setupRealtimeListener(currentUser.id, (updatedPost) => {
+        showNotification(`New response on your post: "${updatedPost.content.substring(0, 30)}..."`);
+        renderPosts();
+    });
 }
 
 // Initialize the app
